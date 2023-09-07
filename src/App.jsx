@@ -1,45 +1,65 @@
+import AllMoviesPage from './pages/AllMoviesPage.jsx';
+import ErrorPage from './pages/ErrorPage.jsx';
+import IndexPage from './pages/IndexPage.jsx';
+import LoginPage from './pages/LoginPage.jsx';
+import MovieDetailPage from './pages/MovieDetailPage.jsx';
+import YourRatingsPage from './pages/YourRatingsPage.jsx';
+import {
+  Route,
+  Routes,
+  RouterProvider,
+  createBrowserRouter,
+  createRoutesFromElements,
+} from 'react-router-dom';
 import axios from 'axios';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import LogoutButton from './components/LogoutButton.jsx';
+import React from 'react';
+import Root from './pages/Root.jsx';
 
-export default function App() {
-  const navigate = useNavigate();
 
-  const handleLogout = async (e) => {
-    e.preventDefault();
-    const res = await axios.post('/api/logout');
-    if (res.data.success) {
-      navigate('/');
-    }
-  };
 
-  return (
-    <>
-      <nav>
-        <ul>
-          <li>
-            <NavLink to="/">Home</NavLink>
-          </li>
-          <li>
-            <NavLink to="/movies">All movies</NavLink>
-          </li>
-          <li>
-            <NavLink to="/login">Log in</NavLink>
-          </li>
-          <li>
-            <NavLink to="/me">Your ratings</NavLink>
-          </li>
-          <li>
-            <LogoutButton onLogout={handleLogout} />
-          </li>
-        </ul>
-      </nav>
+//? Routes are defined here before they're passed to the RouterProvider component as props
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route path="/" element={<Root />} errorElement={<ErrorPage />}>
+      {/* Homepage */}
+      <Route index element={<IndexPage />} />
 
-      <hr />
+      {/* All Movies */}
+      <Route
+        path="movies"
+        element={<AllMoviesPage />}
+        loader={async () => {
+          const res = await axios.get('/api/movies');
+          return { movies: res.data };
+        }}
+        />
 
-      <main>
-        <Outlet />
-      </main>
-    </>
-  );
+      {/* Movie detail pages */}
+      <Route
+        path="movies/:movieId"
+        element={<MovieDetailPage />}
+        loader={async ({ params }) => {
+          const res = await axios.get(`/api/movies/${params.movieId}`);
+          return { movie: res.data };
+        }}
+      />
+
+      {/* Login */}
+      <Route path="login" element={<LoginPage />} />
+
+      {/* Your ratings */}
+      <Route
+        path="/me"
+        element={<YourRatingsPage />}
+        loader={async () => {
+          const res = await axios.get('/api/ratings');
+          return { ratings: res.data };
+        }}
+      />
+    </Route>,
+  ),
+);
+
+  export default function App() {
+  return <RouterProvider router={router}/>
 }
